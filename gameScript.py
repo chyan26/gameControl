@@ -1,5 +1,9 @@
+import logging
 from pynput.keyboard import Controller, Key
 import time
+
+# Setup logging
+logging.basicConfig(filename='key_events.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
 # Initialize the keyboard controller
 keyboard = Controller()
@@ -9,13 +13,17 @@ def press_key(key, duration):
     Press and hold a key for a specified duration using a timing loop.
     """
     key_name = key.name if isinstance(key, Key) else key.upper()  # Handle Key objects and strings
+    logging.info(f"Pressing {key_name} for {duration} seconds")
     print(f"Pressing {key_name} for {duration} seconds...")
     start_time = time.perf_counter()
     keyboard.press(key)
-    while time.perf_counter() - start_time < duration:
-        pass  # Busy-wait loop
-    keyboard.release(key)
-    print(f"Released {key_name} after {duration} seconds.")
+    try:
+        while time.perf_counter() - start_time < duration:
+            time.sleep(0.01)  # Reduce CPU usage
+    finally:
+        keyboard.release(key)
+        logging.info(f"Released {key_name} after {duration} seconds")
+        print(f"Released {key_name} after {duration} seconds.")
 
 
 def execute_sequence():
@@ -23,7 +31,7 @@ def execute_sequence():
     Executes the key press sequence starting from 'w'.
     """
     press_key('w', 4.7)
-    press_key('a', 0.9)
+    press_key('a', 1.0)
     press_key('w', 0.5)
     press_key('1', 0.5)
     time.sleep(4)
