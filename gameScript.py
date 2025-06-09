@@ -136,7 +136,13 @@ def extract_number_from_image(image_path):
 
     # Crop the lower-right corner (adjust coordinates as needed)
     width, height = img.size
-    cropped_img = img.crop((1200, 740, 1300, 770))  # Example coordinates
+    # Calculate crop coordinates using fractions
+    left = width * 0.86  # Start at 86% of the width
+    top = height * 0.86  # Start at 86% of the height
+    right = width * 0.93  # End at 93% of the width
+    bottom = height * 0.90  # End at 90% of 
+
+    cropped_img = img.crop((left, top, right, bottom))
     cropped_img.save("cropped_image.png")  # Save cropped image for debugging
 
     # Use pytesseract to extract text
