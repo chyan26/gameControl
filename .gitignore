@@ -1,0 +1,11 @@
+# Ignore screenshot files
+chiaki_capture_*.png
+
+# Ignore log files
+extracted_numbers.log
+
+cropped_image.png
+
+# Ignore temporary files
+*.tmp
+*.log
