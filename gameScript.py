@@ -18,6 +18,7 @@ import time
 os.environ["TESSDATA_PREFIX"] = "/opt/local/share/tessdata"
 import glob
 import logging
+import asyncio
 # --- end of imports ---
 
 print(f"Imports took {time.time() - start_import:.3f} seconds")
@@ -203,17 +204,20 @@ class ImageProcessor:
         print(f"RMS difference: {rms}")
         return rms < tolerance  # True if images are similar enough
 
-    def delete_old_images(self, current_image_path):
+    async def delete_old_images(self, current_image_path):
         """
-        Deletes old screenshots except the last and current ones.
+        Deletes old screenshots except the last and current ones asynchronously.
         """
         keep = {self.last_image_path, current_image_path}
+        tasks = []
         for f in glob.glob("chiaki_capture_*.png"):
             if f not in keep and f is not None:
-                os.remove(f)  # Directly delete the file without waiting
-                print(f"Deleted old image: {f}")
+                tasks.append(asyncio.to_thread(os.remove, f))  # Schedule deletion in a separate thread
+                print(f"Scheduled deletion for: {f}")
+        await asyncio.gather(*tasks)  # Wait for all deletions to complete
+        print("Old images deleted.")
 
-    def capture_and_process(self, window_id, sequence_count):
+    async def capture_and_process(self, window_id, sequence_count):
         """
         Captures the window image, extracts the number, and checks conditions.
         Returns True if the sequence should continue, False otherwise.
@@ -236,16 +240,16 @@ class ImageProcessor:
             logging.info("Sequence stopped due to failure to extract a number.")
             return False  # Stop the sequence
 
-        # Delete old screenshots
-        self.delete_old_images(current_image_path)
+        # Delete old screenshots asynchronously
+        await self.delete_old_images(current_image_path)
 
         self.last_image_path = current_image_path  # Update the last image path
         return True  # Continue the sequence
 
 
-def main():
+async def main():
     print("Starting in 3 seconds...")
-    time.sleep(3)
+    await asyncio.sleep(3)
 
     sequence_count = 0
     image_processor = ImageProcessor()  # Initialize the ImageProcessor class
@@ -256,7 +260,7 @@ def main():
             if sequence_count > 1:
                 window_id = image_processor.get_chiaki_window_id()
                 if window_id:
-                    if not image_processor.capture_and_process(window_id, sequence_count):
+                    if not await image_processor.capture_and_process(window_id, sequence_count):
                         break  # Stop the sequence if conditions are met
                 else:
                     print("Chiaki-ng window not found.")
@@ -269,6 +273,10 @@ def main():
     print("Done!")
 
 if __name__ == "__main__":
-    #main()
-    image_processor = ImageProcessor()
-    image_processor.extract_number_from_image("chiaki_capture_138.png")  # Example usage of the OCR function
+    asyncio.run(main())
+
+if __name__ == "__main__":
+    main()
+    
+    #image_processor = ImageProcessor()
+    #image_processor.extract_number_from_image("chiaki_capture_138.png")  # Example usage of the OCR function
