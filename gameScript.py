@@ -176,7 +176,7 @@ class ImageProcessor:
 
         # Use pytesseract to extract text
         text = pytesseract.image_to_string(cropped_img, config='--psm 6 digits')
-        print(f"OCR text: {text}")
+        #print(f"OCR text: {text}")
 
         # Extract the number using regex
         match = re.search(r'\d+', text)
@@ -219,11 +219,18 @@ class ImageProcessor:
 
     async def capture_and_process(self, window_id, sequence_count):
         """
-        Captures the window image, extracts the number, and checks conditions.
+        Captures the window image, extracts the number, compares images, and checks conditions.
         Returns True if the sequence should continue, False otherwise.
         """
         current_image_path = f"chiaki_capture_{sequence_count}.png"
         self.capture_window(window_id, current_image_path)
+
+        # Compare images
+        if self.last_image_path and not self.compare_images(self.last_image_path, current_image_path, tolerance=10):
+            print("Window image changed! Going back to start and resetting sequence.")
+            goback_to_start()
+            self.last_image_path = None  # Update the last image path
+            return True  # Restart the sequence
 
         # Extract number from the captured image
         extracted_number = self.extract_number_from_image(current_image_path)
@@ -274,9 +281,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-if __name__ == "__main__":
-    main()
+    #goback_to_start()  # Ensure we return to the start position at the end of the script
     
     #image_processor = ImageProcessor()
     #image_processor.extract_number_from_image("chiaki_capture_138.png")  # Example usage of the OCR function
