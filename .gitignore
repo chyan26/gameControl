@@ -9,3 +9,6 @@ cropped_image.png
 # Ignore temporary files
 *.tmp
 *.log
+
+# Exclude PNG files in the test_data folder
+!test_data/*.png
