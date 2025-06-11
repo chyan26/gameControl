@@ -5,20 +5,16 @@ start_import = time.time()
 from pynput.keyboard import Controller, Key
 import Quartz
 import Quartz.CoreGraphics as CG
-try:
-    from CoreServices import kUTTypePNG
-except ImportError:
-    import objc
-    kUTTypePNG = objc.lookUpClass("NSString").stringWithString_("public.png")
+from CoreServices import kUTTypePNG
 from PIL import Image, ImageChops, ImageStat, ImageFilter, ImageEnhance
 import pytesseract
 import re
 import os
-import time
-os.environ["TESSDATA_PREFIX"] = "/opt/local/share/tessdata"
+#os.environ["TESSDATA_PREFIX"] = "/opt/local/share/tessdata"
 import glob
 import logging
 import asyncio
+import easyocr
 # --- end of imports ---
 
 print(f"Imports took {time.time() - start_import:.3f} seconds")
@@ -152,7 +148,8 @@ class ImageProcessor:
         Quartz.CGImageDestinationAddImage(dest, image, None)
         Quartz.CGImageDestinationFinalize(dest)
         print(f"Screenshot saved to {filename}")
-
+        
+            
     def extract_number_from_image(self, image_path):
         """
         Extracts a number from the lower-right corner of the given image using OCR.
@@ -176,10 +173,13 @@ class ImageProcessor:
 
         # Use pytesseract to extract text
         text = pytesseract.image_to_string(cropped_img, config='--psm 6 digits')
+
+        self.reader = easyocr.Reader(['en'], gpu=False)  # Initialize easyOCR reader
+        text = self.reader.readtext("cropped_image.png", detail=0)  # Extract text without bounding box details
         #print(f"OCR text: {text}")
 
         # Extract the number using regex
-        match = re.search(r'\d+', text)
+        match = re.search(r'\d+', text[0])
         if match:
             number = match.group()
             print(f"Extracted number: {number}")
@@ -284,4 +284,4 @@ if __name__ == "__main__":
     #goback_to_start()  # Ensure we return to the start position at the end of the script
     
     #image_processor = ImageProcessor()
-    #image_processor.extract_number_from_image("chiaki_capture_138.png")  # Example usage of the OCR function
+    #image_processor.extract_number_from_image("chiaki_capture_2.png")  # Example usage of the OCR function
